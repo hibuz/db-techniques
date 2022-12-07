@@ -4,6 +4,30 @@
 
 ## 1. Data Manipulation
 ### 1.1 Prevent Lock Contention For Updates On Hot Rows
+> 잦은 업데이트가 필요한 행에 대한 잠금 경합 방지하기
+```sql
+-- MySQL
+
+INSERT INTO tweet_statistics (
+  tweet_id, fanout, likes_count
+) VALUES (
+  1475870220422107137, FLOOR(RAND() * 10), 1
+) ON DUPLICATE KEY UPDATE likes_count =
+likes_count + VALUES(likes_count);
+
+-- PostgreSQL
+INSERT INTO tweet_statistics (
+  tweet_id, fanout, likes_count
+) VALUES (
+  1475870220422107137, FLOOR(RANDOM() * 10), 1
+) ON CONFLICT (tweet_id, fanout) DO UPDATE SET likes_count =
+tweet_statistics.likes_count + excluded.likes_count;
+```
+
+트위터의 트윗 카운터가 지속적인 업데이트를 필요로 할때, 트래픽 급증 또는 인기 트윗의 경우 카운터가 1초 안에 수없이 업데이트될 수 있습니다. 이 경우 데이터베이스의 동시성 제어로 인해 한 번에 하나의 트랜잭션(쿼리)만 행을 잠글 수 있으므로 업데이트가 서로 간섭하기 시작합니다.
+모든 업데이트는 독립된 행에 대해 병렬 실행 대신 차례로 실행됩니다. 단일 행을 업데이트하는 대신 증분은 예를 들어 특별한 카운터 테이블의 100 개의 다른 행으로 팬 아웃됩니다. 이제 scaling factor는 카운터가 기록되는 추가 행의 수에 따라 증가합니다. 이러한 값은 나중에 단일 값으로 집계되고 잠금 경합이 발생했을 원래 열에 저장됩니다.
+
+
 ### 1.2 Updates Based On A Select Query
 ### 1.3 Return The Values Of Modified Rows
 ### 1.4 Delete Duplicate Rows
