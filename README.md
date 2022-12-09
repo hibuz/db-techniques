@@ -3,6 +3,8 @@
 
 
 ## 1. Data Manipulation
+일부 정적인 컨텐츠만 있는 애플리케이션이도 존재하지만 대부분 데이터 변경을 필요로 합니다. 데이터베이스의 INSERT, UPDATE 또는 DELETE 쿼리 사용은 SQL에서 가장 복잡하지 않은 기능인 것처럼 보이지만, 여전히 애플리케이션의 개선 포인트가 될 수 있습니다. 디스크가 1초에 수행할 수 있는 쓰기 작업의 수는 매우 제한적이라는 점을 항상 기억하십시오. 초당 작업 수를 줄일 수 있다면 애플리케이션의 성능은 훨씬 향상됩니다. 1장에서는 다른 테이블의 정보를 기반으로 행을 업데이트하거나 중복 행을 삭제하거나 잠금 경합을 제거하여 애플리케이션을 더 빠르게 만드는 방법을 알려줍니다. 마지막 팁은 종종 성능 문제라는 것을 알았기 때문에 자세히 학습해야 합니다.
+
 ### 1.1 Prevent Lock Contention For Updates On Hot Rows
 > 잦은 업데이트가 필요한 행에 대한 잠금 경합 방지하기
 ```sql
@@ -47,6 +49,19 @@ WHERE products.category_id = categories.category_id;
 > 데이터베이스 전문 웹 사이트인 SQLFordevs.com 에서 UPDATE from a SELECT와 관련된 자세한 내용을 확인할 수 있습니다.
 
 ### 1.3 Return The Values Of Modified Rows
+> 변경된 행의 반환 값 사용
+```sql
+-- PostgreSQL:
+DELETE FROM sessions
+WHERE ip = '127.0.0.1'
+RETURNING id, user_agent, last_access;
+```
+대부분의 유지보수 작업은 특정 행을 찾아 처리(예: 이메일 전송 또는 일부 통계 계산)하고 처리된 행으로 표시하는 것을 기반으로 합니다. 일반적으로 행 내의 플래그는 더 이상 필요하지 않으므로 업데이트되거나 삭제됩니다. RETURNING 기능을 사용하여 데이터 조작 및 데이터 선택을 한 단계로 수행해서 처리 워크 플로우를 단순화 할 수 있습니다. 이 기능은 DELETE, INSERT 및 UPDATE 쿼리에 사용할 수 있으며 데이터 변경이 완료된 후 데이터(예를들면 모든 트리거가 실행되고 생성된 값이 사용 가능한 Inserted 또는 Updated 데이터)를 반환합니다.
+
+> **:bulb:참고**   
+> 이 기능은 PostgreSQL에서만 가능합니다.
+
+
 ### 1.4 Delete Duplicate Rows
 ### 1.5 Table Maintenance After Bulk Modifications
 
