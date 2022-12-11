@@ -111,8 +111,20 @@ ANALYZE SKIP_LOCKED users;
 데이터베이스는 쿼리를 실행하는 가장 효율적인 방법을 계산하기 위해 대략적인 행 수, 값의 데이터 분포 등 테이블에 대한 최신 통계가 필요합니다. 데이터에 영향을 미치는 행이 생성, 업데이트 또는 삭제 될 때마다 자동으로 변경되는 인덱스와 달리 모든 변경시마다 통계는 계산되지 않습니다. 재 계산은 테이블에 대한 변경 임계 값을 초과할 때만 트리거됩니다. 테이블의 큰 부분을 변경할 때마다 영향을 받는 행의 수는 여전히 통계 재계산 임계값보다 낮지만 통계가 부정확해질 정도의 의미가 있을 수 있습니다. 데이터베이스가 테이블에 대한 잘못된 정보를 기반으로 최상의 쿼리 계획을 예측하기 때문에 일부 쿼리는 매우 느려질 수 있습니다. 따라서 중요한 변경이 있을 때 통계 재계산을 트리거하기 위해 ANALYZE TABLE을 하면 쿼리 속도를 높일 수 있습니다.
 
 ## 2. Querying Data
+작성하고 실행하는 대부분의 SQL 쿼리는 데이터베이스에서 데이터를 읽는 쿼리입니다. 데이터를 표시하지 않으면 애플리케이션이 쓸모없게 되므로 애플리케이션의 기본이 됩니다. 그러나 보다 정교한 쿼리 접근 방식을 사용하여 많은 애플리케이션의 보일러플레이트를 제거할 수 있는 가장 좋은 기회이기도 합니다. 대부분의 사례를 보면 이러한 접근 방식은 데이터를 모두 애플리케이션으로 보내지 않고 데이터가 있는 곳에서 데이터를 처리할 때 성능을 향상시킵니다. 이 챕터는 SQL 내의 for-each 루프, 몇 가지 null 처리 트릭, 페이지 지정 실수와 같은 예외적인 기능을 보여줄 것입니다. CTE를 사용하여 데이터 정제(refinement) 팁을 매우 자세히 읽고 나서 이해한다면 자주 사용할 수 있습니다.
 
 ### 2.1 Reduce The Amount Of Group By Columns
+> Group By 컬럼 갯수 줄이기
+
+```sql
+SELECT actors.firstname, actors.lastname, COUNT(*) as count
+FROM actors
+JOIN actors_movies USING(actor_id)
+GROUP BY actors.id
+```
+
+일부 열을 그룹화할때는 모든 SELECT 열을 GROUP BY에 추가해야 한다는 것을 오래전에 배웠을 것입니다. 그러나 PK로 GROUP BY 하면 데이터베이스가 자동으로 추가하므로 동일한 테이블의 모든 열을 생략할 수 있습니다. 결과적으로 쿼리가 짧아져서 읽고 이해하기가 더 쉬워집니다.
+
 ### 2.2 Fill Tables With Large Amounts Of Test Data
 ### 2.3 Simplified Inequality Checks With Nullable Columns
 ### 2.4 Prevent Division By Zero Errors
