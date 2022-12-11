@@ -45,7 +45,7 @@ WHERE products.category_id = categories.category_id;
 ```
 하나의 테이블이 독자적으로 업데이트 되기도 하지만 다른 테이블에 저장된 정보를 기반으로 값이 업데이트 되기도 합니다. 예를 들어, 대대적인 행사기간 동안 모든 제품을 할인하는 경우, 각 상품은 카테고리별 할인율을 적용 받습니다. 모든 카테고리에 대해 업데이트 쿼리를 실행하는 단순한 방법 대신 상품을 카테고리와 조인하여 업데이트할 수 있습니다. 응용프로그램의 수동 조인은 데이터베이스에 의해 보다 효율적인 조인으로 대체됩니다.
 
-> **:bulb:참고**
+> **:bulb:참고**  
 > 데이터베이스 전문 웹 사이트인 SQLFordevs.com: [UPDATE from a SELECT](https://sqlfordevs.com/update-from-select) 에서 이 주제와 관련된 자세한 내용을 확인할 수 있습니다.
 
 ### 1.3 Return The Values Of Modified Rows
@@ -58,7 +58,7 @@ RETURNING id, user_agent, last_access;
 ```
 대부분의 유지보수 작업은 특정 행을 찾아 처리(예: 이메일 전송 또는 일부 통계 계산)하고 처리된 행으로 표시하는 것을 기반으로 합니다. 일반적으로 행 내의 플래그는 더 이상 필요하지 않으므로 업데이트되거나 삭제됩니다. RETURNING 기능을 사용하여 데이터 조작 및 데이터 선택을 한 단계로 수행해서 처리 워크 플로우를 단순화 할 수 있습니다. 이 기능은 DELETE, INSERT 및 UPDATE 쿼리에 사용할 수 있으며 데이터 변경이 완료된 후 데이터(예를들면 모든 트리거가 실행되고 생성된 값이 사용 가능한 Inserted 또는 Updated 데이터)를 반환합니다.
 
-> **:bulb:참고**   
+> **:bulb:참고**  
 > 이 기능은 PostgreSQL에서만 가능합니다.
 
 ### 1.4 Delete Duplicate Rows
@@ -90,14 +90,28 @@ DELETE FROM contacts
 USING duplicates
 WHERE contacts.id = duplicates.id AND duplicates.rownum > 1;
 ```
-시간이 지나면 대부분의 애플리케이션에서 행이 중복되어 사용자 경험이 나빠지고 스토리지 요구 사항이 증가하며 데이터베이스 성능이 저하됩니다. 공통 테이블 표현식(CTE)을 사용하여 중복 행을 중요도별로 식별하고 정렬하여 보관할 수 있습니다. 단일 삭제 쿼리는 이후에 보관할 특정 개수를 제외한 모든 중복 항목을 삭제할 수 있습니다. 이러한 복잡한 로직을 하나의 단순한 SQL 쿼리로 수행합니다.
+시간이 지나면 대부분의 애플리케이션에서 행이 중복되어 사용자 경험이 나빠지고 스토리지 요구 사항이 증가하며 데이터베이스 성능이 저하됩니다. CTE(Common Table Expression)을 사용하여 중복 행을 중요도별로 식별하고 정렬하여 보관할 수 있습니다. 단일 삭제 쿼리는 이후에 보관할 특정 개수를 제외한 모든 중복 항목을 삭제할 수 있습니다. 이러한 복잡한 로직을 하나의 단순한 SQL 쿼리로 수행합니다.
 
-> **:bulb:참고**
-> 데이터베이스 전문 웹 사이트인 SQLFordevs.com: [Delete Duplicate Rows](https://sqlfordevs.com/delete-duplicate-rows) 에서 이 주제와 관련된 자세한 내용을 확인할 수 있습니다.
+> **:bulb:참고**  
+> * CTE는 서브쿼리로 쓰이는 파생테이블(derived table)과 비슷한 개념으로 사용됩니다.  
+> CTE 구문이 WITH로 시작해서 WITH 절이라고도 하고 MySQL 8.0이상부터 지원합니다.  
+> CTE는 권한이 필요 없고 하나의 쿼리문이 끝날때까지만 지속되는 일회성 테이블이라는 점이 VIEW와는 다릅니다.
+> * 데이터베이스 전문 웹 사이트인 SQLFordevs.com: [Delete Duplicate Rows](https://sqlfordevs.com/delete-duplicate-rows) 에서 이 주제와 관련된 자세한 내용을 확인할 수 있습니다.
 
 ### 1.5 Table Maintenance After Bulk Modifications
+> 벌크 수정 후 테이블 유지관리
+
+```sql
+-- MySQL
+ANALYZE TABLE users;
+
+-- PostgreSQL
+ANALYZE SKIP_LOCKED users;
+```
+데이터베이스는 쿼리를 실행하는 가장 효율적인 방법을 계산하기 위해 대략적인 행 수, 값의 데이터 분포 등 테이블에 대한 최신 통계가 필요합니다. 데이터에 영향을 미치는 행이 생성, 업데이트 또는 삭제 될 때마다 자동으로 변경되는 인덱스와 달리 모든 변경시마다 통계는 계산되지 않습니다. 재 계산은 테이블에 대한 변경 임계 값을 초과할 때만 트리거됩니다. 테이블의 큰 부분을 변경할 때마다 영향을 받는 행의 수는 여전히 통계 재계산 임계값보다 낮지만 통계가 부정확해질 정도의 의미가 있을 수 있습니다. 데이터베이스가 테이블에 대한 잘못된 정보를 기반으로 최상의 쿼리 계획을 예측하기 때문에 일부 쿼리는 매우 느려질 수 있습니다. 따라서 중요한 변경이 있을 때 통계 재계산을 트리거하기 위해 ANALYZE TABLE을 하면 쿼리 속도를 높일 수 있습니다.
 
 ## 2. Querying Data
+
 ### 2.1 Reduce The Amount Of Group By Columns
 ### 2.2 Fill Tables With Large Amounts Of Test Data
 ### 2.3 Simplified Inequality Checks With Nullable Columns
@@ -115,6 +129,7 @@ WHERE contacts.id = duplicates.id AND duplicates.rownum > 1;
 ### 2.15 Table Joins With A For-Each Loop
 
 ## 3. Schema
+
 ### 3.1 Rows Without Overlapping Dates
 ### 3.2 Store Trees As Materialized Paths
 ### 3.3 JSON Columns to Combine NoSQL and Relational Databases
@@ -127,6 +142,7 @@ WHERE contacts.id = duplicates.id AND duplicates.rownum > 1;
 ### 3.10 Pre-Aggregation of Values for Faster Queries
 
 ## 4. Indexes
+
 ### 4.1 Indexes On Functions And Expressions
 ### 4.2 Find Unused Indexes
 ### 4.3 Safely Deleting Unused Indexes
