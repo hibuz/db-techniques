@@ -45,8 +45,8 @@ WHERE products.category_id = categories.category_id;
 ```
 하나의 테이블이 독자적으로 업데이트 되기도 하지만 다른 테이블에 저장된 정보를 기반으로 값이 업데이트 되기도 합니다. 예를 들어, 대대적인 행사기간 동안 모든 제품을 할인하는 경우, 각 상품은 카테고리별 할인율을 적용 받습니다. 모든 카테고리에 대해 업데이트 쿼리를 실행하는 단순한 방법 대신 상품을 카테고리와 조인하여 업데이트할 수 있습니다. 응용프로그램의 수동 조인은 데이터베이스에 의해 보다 효율적인 조인으로 대체됩니다.
 
-> **:bulb:참고**   
-> 데이터베이스 전문 웹 사이트인 SQLFordevs.com 에서 UPDATE from a SELECT와 관련된 자세한 내용을 확인할 수 있습니다.
+> **:bulb:참고**
+> 데이터베이스 전문 웹 사이트인 SQLFordevs.com: [UPDATE from a SELECT](https://sqlfordevs.com/update-from-select) 에서 이 주제와 관련된 자세한 내용을 확인할 수 있습니다.
 
 ### 1.3 Return The Values Of Modified Rows
 > 변경된 행의 반환 값 사용
@@ -61,8 +61,40 @@ RETURNING id, user_agent, last_access;
 > **:bulb:참고**   
 > 이 기능은 PostgreSQL에서만 가능합니다.
 
-
 ### 1.4 Delete Duplicate Rows
+> 중복 행 삭제
+
+```sql
+-- MySQL
+WITH duplicates AS (
+  SELECT id, ROW_NUMBER() OVER(
+    PARTITION BY firstname, lastname, email
+    ORDER BY age DESC
+  ) AS rownum
+  FROM contacts
+)
+DELETE contacts
+FROM contacts
+JOIN duplicates USING(id)
+WHERE duplicates.rownum > 1;
+
+-- PostgreSQL
+WITH duplicates AS (
+  SELECT id, ROW_NUMBER() OVER(
+    PARTITION BY firstname, lastname, email
+    ORDER BY age DESC
+  ) AS rownum
+  FROM contacts
+)
+DELETE FROM contacts
+USING duplicates
+WHERE contacts.id = duplicates.id AND duplicates.rownum > 1;
+```
+시간이 지나면 대부분의 애플리케이션에서 행이 중복되어 사용자 경험이 나빠지고 스토리지 요구 사항이 증가하며 데이터베이스 성능이 저하됩니다. 공통 테이블 표현식(CTE)을 사용하여 중복 행을 중요도별로 식별하고 정렬하여 보관할 수 있습니다. 단일 삭제 쿼리는 이후에 보관할 특정 개수를 제외한 모든 중복 항목을 삭제할 수 있습니다. 이러한 복잡한 로직을 하나의 단순한 SQL 쿼리로 수행합니다.
+
+> **:bulb:참고**
+> 데이터베이스 전문 웹 사이트인 SQLFordevs.com: [Delete Duplicate Rows](https://sqlfordevs.com/delete-duplicate-rows) 에서 이 주제와 관련된 자세한 내용을 확인할 수 있습니다.
+
 ### 1.5 Table Maintenance After Bulk Modifications
 
 ## 2. Querying Data
