@@ -126,6 +126,31 @@ GROUP BY actors.id
 일부 열을 그룹화할때는 모든 SELECT 열을 GROUP BY에 추가해야 한다는 것을 오래전에 배웠을 것입니다. 그러나 PK로 GROUP BY 하면 데이터베이스가 자동으로 추가하므로 동일한 테이블의 모든 열을 생략할 수 있습니다. 결과적으로 쿼리가 짧아져서 읽고 이해하기가 더 쉬워집니다.
 
 ### 2.2 Fill Tables With Large Amounts Of Test Data
+> 대량의 테스트 데이터 만들기
+
+```sql
+-- MySQL
+SET cte_max_recursion_depth = 4294967295;
+INSERT INTO contacts (firstname, lastname)
+WITH RECURSIVE counter(n) AS(
+  SELECT 1 AS n
+  UNION ALL
+  SELECT n + 1 FROM counter WHERE n < 100000
+)
+SELECT CONCAT('firstname-', counter.n), CONCAT('lastname-', counter.n)
+FROM counter
+-- PostgreSQL
+INSERT INTO contacts (firstname, lastname)
+SELECT CONCAT('firstname-', i), CONCAT('lastname-', i)
+FROM generate_series(1, 100000) as i;
+```
+
+때로는 성능 테스트를 위해 테스트용 테이블에 데이터를 준비해야 합니다. 이 데이터는 보통 fake 데이터 생성 라이브러리를 쓰거나 많은 코드로 테스트 데이터를 현실적으로 만들기도 합니다. 하지만 많은 테스트 데이터를 천천히 하나씩 insert하는 대신 이러한 쿼리로 많은 더미 데이터를 생성하여 인덱스의 효율성을 테스트 할 수 있습니다.
+
+> **:warning:주의**  
+> 의미 있는 벤치마크를 위해서는 현실적인 데이터와 값 분포가 필요합니다. 그러나 당신의 쿼리의 영향을 받지 않는 더 많은 테스트 데이터 생성을 위해 이 방법을 사용할 수 있습니다.
+
+
 ### 2.3 Simplified Inequality Checks With Nullable Columns
 ### 2.4 Prevent Division By Zero Errors
 ### 2.5 Sorting Order With Nullable Columns
