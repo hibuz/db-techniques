@@ -139,6 +139,7 @@ WITH RECURSIVE counter(n) AS(
 )
 SELECT CONCAT('firstname-', counter.n), CONCAT('lastname-', counter.n)
 FROM counter
+
 -- PostgreSQL
 INSERT INTO contacts (firstname, lastname)
 SELECT CONCAT('firstname-', i), CONCAT('lastname-', i)
@@ -152,6 +153,18 @@ FROM generate_series(1, 100000) as i;
 
 
 ### 2.3 Simplified Inequality Checks With Nullable Columns
+> Nullable 컬럼에 대한 간단한 부등식 검사
+
+```sql
+-- MySQL
+SELECT * FROM example WHERE NOT(column <> 'value');
+
+-- PostgreSQL
+SELECT * FROM example WHERE column IS DISTINCT FROM 'value';
+```
+
+Nullable 컬럼에 대해 특정 값과 같지 않은 데이터를 검색하는 것은 복잡합니다. 많이 사용하는 col != 'value' 조건절은 null 값에 대해서는 적용되지 않아 결과에 포함되지 않습니다. 그래서 항상 원하는 결과를 얻으려고 더 복잡한 (col IS NULL OR col!= 'value') 조건절을 사용합니다. 다행히도 두 데이터베이스 모두 null 처리를 포함하는 부등식 검사 기능을 지원합니다.
+
 ### 2.4 Prevent Division By Zero Errors
 ### 2.5 Sorting Order With Nullable Columns
 ### 2.6 Deterministic Ordering for Pagination
