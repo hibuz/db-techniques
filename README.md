@@ -166,6 +166,15 @@ SELECT * FROM example WHERE column IS DISTINCT FROM 'value';
 Nullable 컬럼에 대해 특정 값과 같지 않은 데이터를 검색하는 것은 복잡합니다. 많이 사용하는 col != 'value' 조건절은 null 값에 대해서는 적용되지 않아 결과에 포함되지 않습니다. 그래서 항상 원하는 결과를 얻으려고 더 복잡한 (col IS NULL OR col!= 'value') 조건절을 사용합니다. 다행히도 두 데이터베이스 모두 null 처리를 포함하는 부등식 검사 기능을 지원합니다.
 
 ### 2.4 Prevent Division By Zero Errors
+> 0으로 나누기 에러 방지
+
+```sql
+SELECT visitors_today / NULLIF(visitors_yesterday, 0)
+FROM logs_aggregated;
+```
+
+데이터베이스 통계 작업은 어렵지 않고 아마 수백 번을 수행했을 것입니다. 그러나 쿼리를 작성할 때 수행한 가정이 더 이상 유효하지 않아 몇 달 후에 이러한 쿼리에서 에러가 발생했을 수 있습니다. 아마도 사이트가 다운되어 특정한 날에 방문자가 없었거나, 어제 처음으로 온라인 스토어 판매 건수가 없을 수도 있습니다. 그날에는 데이터가 없어 SUM(visitors_yesterday)으로 나눗셈 계산 시 에러가 발생하게 됩니다. 따라서 일부 데이터가 누락된 경우를 고려하여 항상 0으로 나누지 않도록 해야 합니다. 나누는 수를 0에서 Null 값으로 변환하면 해당 문제가 해결됩니다.
+
 ### 2.5 Sorting Order With Nullable Columns
 ### 2.6 Deterministic Ordering for Pagination
 ### 2.7 More Efficient Pagination Than LIMIT OFFSET
