@@ -176,6 +176,27 @@ FROM logs_aggregated;
 데이터베이스 통계 작업은 어렵지 않고 아마 수백 번을 수행했을 것입니다. 그러나 쿼리를 작성할 때 수행한 가정이 더 이상 유효하지 않아 몇 달 후에 이러한 쿼리에서 에러가 발생했을 수 있습니다. 아마도 사이트가 다운되어 특정한 날에 방문자가 없었거나, 어제 처음으로 온라인 스토어 판매 건수가 없을 수도 있습니다. 그날에는 데이터가 없어 SUM(visitors_yesterday)으로 나눗셈 계산 시 에러가 발생하게 됩니다. 따라서 일부 데이터가 누락된 경우를 고려하여 항상 0으로 나누지 않도록 해야 합니다. 나누는 수를 0에서 Null 값으로 변환하면 해당 문제가 해결됩니다.
 
 ### 2.5 Sorting Order With Nullable Columns
+> Nullable 컬럼의 정렬순서
+
+```sql
+-- MySQL: NULL값 처음 배치 (기본)
+SELECT * FROM customers ORDER BY country ASC;
+SELECT * FROM customers ORDER BY country IS NOT NULL, country ASC;
+-- MYSQL: NULL값 마지막 배치
+SELECT * FROM customers ORDER BY country IS NULL, country ASC;
+
+-- PostgreSQL: NULL값 처음 배치
+SELECT * FROM customers ORDER BY country ASC NULLS FIRST;
+-- PostgreSQL: NULL값 마지막 배치 (기본)
+SELECT * FROM customers ORDER BY country ASC;
+SELECT * FROM customers ORDER BY country ASC NULLS LAST;
+```
+
+MySQL과 PostgreSQL은 nullable 컬럼의 NULL 값을 완전히 다르게 정렬합니다. 오름차순 정렬 시 MySQL에서는 NULL 값이 처음에 나오는 반면 PostgreSQL에서는 맨뒤에서 조회됩니다. NULL 값에 대한 정렬 순서 규칙이 SQL 표준에서 누락되어 DB구현에 따라 기본값이 다를 수 있습니다. 따라서 애플리케션에서는 사용자 경험을 향상시키기 위해 상황에 맞는 제어가 필요합니다. 일반적으로 오름차순, 내림차순으로 지정된 컬럼들은 특정 행을 검색할 때 NULL값을 보는데 관심이 없으므로 마지막에 있어야 합니다. 그러나 컬럼의 빈값이 최신데이터로 의미가 부여된 경우 해당 정보가 가장 먼저 표시되어야 좋은 경우도 있습니다.
+
+> **:bulb:참고**  
+> 데이터베이스 전문 웹 사이트인 SQLFordevs.com: [ORDER BY with nullable columns](https://sqlfordevs.com/order-by-with-null) 에서 이 주제와 관련된 자세한 내용을 확인할 수 있습니다.
+
 ### 2.6 Deterministic Ordering for Pagination
 ### 2.7 More Efficient Pagination Than LIMIT OFFSET
 ### 2.8 Database-Backed Locks With Safety Guarantees
