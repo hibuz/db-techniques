@@ -201,17 +201,11 @@ MySQL과 PostgreSQL은 nullable 컬럼의 NULL 값을 완전히 다르게 정렬
 > 페이징의 결정적 순서
 
 ```sql
--- MySQL: NULL값 처음 배치 (기본)
-SELECT * FROM customers ORDER BY country ASC;
-SELECT * FROM customers ORDER BY country IS NOT NULL, country ASC;
--- MYSQL: NULL값 마지막 배치
-SELECT * FROM customers ORDER BY country IS NULL, country ASC;
+SELECT *
+FROM users
+ORDER BY firstname ASC, lastname ASC, user_id ASC
+LIMIT {contents 개수} OFFSET {page number}
 
--- PostgreSQL: NULL값 처음 배치
-SELECT * FROM customers ORDER BY country ASC NULLS FIRST;
--- PostgreSQL: NULL값 마지막 배치 (기본)
-SELECT * FROM customers ORDER BY country ASC;
-SELECT * FROM customers ORDER BY country ASC NULLS LAST;
 ```
 
 MySQL과 PostgreSQL은 nullable 컬럼의 NULL 값을 완전히 다르게 정렬합니다. 오름차순 정렬 시 MySQL에서는 NULL 값이 처음에 나오는 반면 PostgreSQL에서는 맨뒤에서 조회됩니다. NULL 값에 대한 정렬 순서 규칙이 SQL 표준에서 누락되어 DB구현에 따라 기본값이 다를 수 있습니다. 따라서 애플리케션에서는 사용자 경험을 향상시키기 위해 상황에 맞는 제어가 필요합니다. 일반적으로 오름차순, 내림차순으로 지정된 컬럼들은 특정 행을 검색할 때 NULL값을 보는데 관심이 없으므로 마지막에 있어야 합니다. 그러나 컬럼의 빈값이 최신데이터로 의미가 부여된 경우 해당 정보가 가장 먼저 표시되어야 좋은 경우도 있습니다.
@@ -222,15 +216,18 @@ MySQL과 PostgreSQL은 nullable 컬럼의 NULL 값을 완전히 다르게 정렬
 ### 2.7 More Efficient Pagination Than LIMIT OFFSET
 > LIMIT OFFSET 기반 페이지네이션 사용시 주의점
 ```sql
+-- MySQL, PostgreSQL
 SELECT *
 FROM users
+WHERE (firstname, lastname, id) > ('John', 'Doe', 3150)
 ORDER BY firstname ASC, lastname ASC, user_id ASC
-LIMIT {contents 개수} OFFSET {page number}
+LIMIT 30
 ```
 
 일부 행을 건너뛰는 LIMIT OFFSET 키워드를 사용하는 가장 단순한 페이지네이션 접근 방식은 때로는 심각한 문제가 발생합니다. 페이지네이션의 과정 중 데이터가 추가되거나 삭제될 경우, 데이터가 누락되거나 중복될 가능성이 있습니다. 데이터의 중복 유무가 중요하지 않은 관리자 게시판 같은 간단한 경우라면 문제가 없지만, 조회된 데이터를 기반으로 중복없이 추가처리가 필요한 상황이라면 커서기반 페이지네이션을 사용하는 것이 보다 안전합니다. 이 경우에도 정렬할 컬럼에 중복된 값이 존재하면 안되고, 순차적이어야 합니다. 따라서 모든 행이 고유하도록 더 많은 열을 추가하여 정렬할 컬럼에 중복된 값이 존재하면 않도록 하여 항상 순서를 결정적으로 만드는 것이 중요합니다. timstamp 같은 순차적이고 고유한 기본 키를 추가하는 것이 가장 간단한 접근 방식입니다.
 
 ### 2.8 Database-Backed Locks With Safety Guarantees
+
 ### 2.9 Refinement Of Data With Common Table Expressions
 ### 2.10 First Row Of Many Similar Ones
 ### 2.11 Multiple Aggregates In One Query
