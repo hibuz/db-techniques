@@ -239,7 +239,7 @@ UPDATE account SET balance = 540 WHERE account_id = 7;
 COMMIT;
 ```
 
-거의 모든 애플리케이션은 레이스 컨디션이 발생하기 쉽습니다. 즉, DB에서 값이 선택되고 애플리케이션이 일부 데이터를 처리하며 값이 새 값으로 업데이트 됩니다. 어떤 데이터를 새로운 값으로 업데이트 하기 위해 애플리케이션은 DB에서 값을 조회합니다. 그러나 계산 중에 발생하는 업데이트로부터 애플리케이션은 보호되지 않습니다. 일부 중요한 부분은 레이스 컨디션에 대비한 잠금 솔루션으로 보호됩니다. 그러나 충돌이 발생하는 애플리케이션 논리는 마지막에 락 해제를 놓칠 수 있으므로 잠금 알고리즘을 구축하기가 어렵습니다. 그리고 이 문제를 해결하기 위한 자동 시간 기반 잠금 해제 접근 방식은 여전히 ​​락을 너무 오랫동안 유지하게 됩니다.
+거의 모든 애플리케이션은 레이스 컨디션이 발생하기 쉽습니다. 즉, DB에서 값이 선택되고 애플리케이션이 일부 데이터를 처리하며 값이 새 값으로 업데이트 됩니다. 어떤 데이터를 새로운 값으로 업데이트 하기 위해 애플리케이션은 DB에서 값을 조회합니다. 그러나 계산 중에 발생하는 업데이트로부터 애플리케이션은 보호되지 않습니다. 일부 중요한 부분은 레이스 컨디션에 대비한 잠금 솔루션으로 보호됩니다. 그러나 충돌이 발생하는 애플리케이션 논리는 마지막에 락 해제를 놓칠 수 있으므로 잠금 알고리즘을 구축하기가 어렵습니다. 그리고 이 문제를 해결하기 위한 자동 시간 기반 잠금 해제 접근 방식은 여전히 ​​락을 너무 오랫동안 유지하게 됩니다.  
 데이터 수정쿼리를(예: UPDATE)를 실행하면 DB는 정확성을 보장하기 위해 트랜잭션이 끝날때 까지 영향을 받는 모든 행을 자체적으로 잠금니다. 애플리케이션에서 잠금 접근 방식을 사용하는 대신 SELECT 쿼리에 FOR UPDATE를 사용하여 레이스 컨디션을 대해 읽기 데이터를 잠그는 방식으로 DB와 협업할 수 있습니다. 이러한 잠금은 트랜잭션이 완료되거나 클리이언트와 연결이 끊어지면 자동으로 해제됩니다.
 
 > **:warning:주의**  
@@ -250,6 +250,40 @@ COMMIT;
 
 
 ### 2.9 Refinement Of Data With Common Table Expressions
+> CTE를 사용한 데이터 구체화
+```sql
+WITH most_popular_products AS (
+  SELECT products.*, COUNT(*) as sales
+  FROM products
+  JOIN users_orders_products USING(product_id)
+  JOIN users_orders USING(order_id)
+  WHERE users_orders.created_at BETWEEN '2022-01-01' AND '2022-06-30'
+  GROUP BY products.product_id
+  ORDER BY COUNT(*) DESC
+  LIMIT 10
+), applicable_users (
+  SELECT DISTINCT users.*
+  FROM users
+  JOIN users_raffle USING(user_id)
+  WHERE users_raffle.correct_answers > 8
+), applicable_users_bought_most_popular_product AS (
+  SELECT applicable_users.user_id, most_popular_products.product_id
+  FROM applicable_users
+  JOIN users_orders USING(order_id)
+  JOIN users_orders_products USING(product_id)
+  JOIN most_popular_products USING(product_id)
+) raffle AS (
+  SELECT product_id, user_id, RANK() OVER(
+    PARTITION BY product_id
+    ORDER BY RANDOM()
+  ) AS winner_order
+  FROM applicable_users_bought_most_popular_product
+)
+SELECT product_id, user_id FROM raffle WHERE winner_order = 1;
+```
+단일 쿼리 하나로 수행하기 어려운 복잡한 규칙이 있는 DB에서 행을 가져와야 하는 경우 CTE(Common Table Expressions)를 사용하여 이를 분할할 수 있습니다. 모든 단계에서 데이터를 구체화하고 나중에 구체화하여 최종적으로 원하는 결과를 얻을 수 있습니다.  
+예를 들어 중첩된 서브쿼리가 많거나 조인이 수십 개이면 CTE는 전통적인 접근 방식보다 가독성이 좋고 반복 단계를 고립시켜 별도로 디버깅이 가능합니다. 성능 측면에서 두 가지 접근방식은 모두 동일합니다. DB는 이를 내부적으로 중첩된 서브쿼리로 변환하거나 여러 번 사용되는 단일 단계를 캐싱하여 보다 효율적인 접근 방식을 찾을 수 있습니다.
+
 ### 2.10 First Row Of Many Similar Ones
 ### 2.11 Multiple Aggregates In One Query
 ### 2.12 Limit Rows Also Including Ties
