@@ -288,6 +288,33 @@ ORDER BY customer_id ASC, price DESC;
 > 이 기능은 PostgreSQL에서만 사용할 수 있습니다.
 
 ### 2.11 Multiple Aggregates In One Query
+> 하나의 쿼리로 다중 집계하기
+```sql
+-- MySQL
+SELECT
+  SUM(released_at = 2001) AS released_2001,
+  SUM(released_at = 2002) AS released_2002,
+  SUM(director = 'Steven Spielberg') AS director_stevenspielberg,
+  SUM(director = 'James Cameron') AS director_jamescameron
+FROM movies
+WHERE streamingservice = 'Netflix';
+-- PostgreSQL
+SELECT
+  COUNT(*) FILTER (WHERE released_at = 2001) AS released_2001,
+  COUNT(*) FILTER (WHERE released_at = 2002) AS released_2002,
+  COUNT(*) FILTER (WHERE director = 'Steven Spielberg') AS
+director_stevenspielberg,
+  COUNT(*) FILTER (WHERE director = 'James Cameron') AS
+director_jamescameron
+FROM movies
+WHERE streamingservice = 'Netflix';
+```
+어떤 경우에는 여러 가지 다른 통계를 계산해야 합니다. 수많은 쿼리를 실행하는 대신, 데이터를 한 번에 통과하여 모든 정보를 수집하는 쿼리를 작성할 수 있습니다.
+데이터와 인덱스에 따라 실행 시간이 빨라지거나 느려질 수 있으므로 반드시 애플리케이션에서 테스트해야 합니다.
+
+> **:bulb:참고**  
+> 데이터베이스 전문 웹 사이트인 SQLFordevs.com: [Multiple Aggregates in One Query](https://sqlfordevs.com/multiple-aggregates-in-one-query) 에서 이 주제와 관련된 광범위한 글을 작성했습니다.
+
 ### 2.12 Limit Rows Also Including Ties
 ### 2.13 Fast Row Count Estimates
 ### 2.14 Date-Based Statistical Queries With Gap-Filling
