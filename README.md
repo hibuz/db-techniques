@@ -316,6 +316,20 @@ WHERE streamingservice = 'Netflix';
 > 데이터베이스 전문 웹 사이트인 SQLFordevs.com: [Multiple Aggregates in One Query](https://sqlfordevs.com/multiple-aggregates-in-one-query) 에서 이 주제와 관련된 광범위한 글을 작성했습니다.
 
 ### 2.12 Limit Rows Also Including Ties
+> 동일 값을 가진 행도 포함시키는 limit
+```sql
+-- PostgreSQL
+SELECT *
+FROM teams
+ORDER BY winning_games DESC
+FETCH FIRST 3 ROWS WITH TIES;
+```
+스포츠 리그 팀의 순위를 매기고 상위 3개 팀을 보여주고 싶다고 상상해 보세요. 드문 경우지만, 시즌이 끝날 때 최소 2개 팀의 승률이 동일할 수 있습니다. 둘 다 3위인 경우 둘 다 포함하도록 limit을 확장할 수 있습니다.
+만약 양팀 모두 3번째에 위치할 때 양팀을 포함해서 limit 을 확장하기를 원할 수 있습니다. 이 떄 WITH TIES 옵션을 사용하면 됩니다. 포함된 값과 동일한 값을 가진 일부 행이 제외되지 않게 limit을 초과하더라도 해당 행까지 포함시켜 줍니다.
+
+> **:bulb:참고**  
+> 이 기능은 PostgreSQL에서만 사용할 수 있습니다.
+
 ### 2.13 Fast Row Count Estimates
 ### 2.14 Date-Based Statistical Queries With Gap-Filling
 ### 2.15 Table Joins With A For-Each Loop
