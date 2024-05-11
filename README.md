@@ -281,7 +281,7 @@ FROM orders
 WHERE EXTRACT (YEAR FROM created_at) = 2022
 ORDER BY customer_id ASC, price DESC;
 ```
-때로는 수많은 행(예를들면 모든 고객)이 있고 그중에 하나만 원하는 경우가 있습니다. 이전에 설명한 대로 for-each-loop와 같은 lateral 조인을 고수하거나 PostgreSQL의 DISTINCT ON invention을 사용할 수 있습니다.
+때로는 수많은 행(예를들면 모든 고객)이 있고 그중에 하나만 원하는 경우가 있습니다. 이전에 설명한 대로 for-each-loop와 같은 lateral 조인을 고수하거나 PostgreSQL의 DISTINCT ON invention을 사용할 수 있습니다.
 표준 DISTINCT 쿼리는 행의 모든 컬럼에서 정확히 일치하는 행을 필터링합니다. 그러나 위 쿼리처럼 사용하면 컬럼의 서브셋을 지정하여 구별할 수 있으며 정렬 후 첫 번째로 일치하는 행만 유지됩니다.
 
 > **:bulb:참고**  
@@ -331,6 +331,17 @@ FETCH FIRST 3 ROWS WITH TIES;
 > 이 기능은 PostgreSQL에서만 사용할 수 있습니다.
 
 ### 2.13 Fast Row Count Estimates
+> 빠른 행 개수 추정
+```sql
+-- MySQL
+EXPLAIN FORMAT=TREE SELECT * FROM movies WHERE rating = 'NC-17' AND price < 4.99;
+-- PostgreSQL
+EXPLAIN SELECT * FROM movies WHERE rating = 'NC-17' AND price < 4.99;
+```
+일치하는 행 수를 표시하는 것은 대부분의 애플리케이션에서 중요한 기능이지만 대규모 DB에서는 구현하기 어려운 경우가 있습니다. DB가 클수록 행 수 계산 속도가 느려집니다.
+개수를 계산하는 데 도움이 되는 인덱스가 없으면 쿼리 속도가 매우 느려집니다. 그러나 기존 인덱스로도 수십만 개의 인덱스를 빠르게 계산할 수는 없습니다.
+하지만 일부 사용 사례에서는 대략적인 행 수만으로도 충분할 수 있습니다. DB 쿼리 플래너는 항상 DB에 실행 계획을 요청하여 추출할 수 있는 쿼리에 대한 대략적인 행 수를 계산합니다.
+
 ### 2.14 Date-Based Statistical Queries With Gap-Filling
 ### 2.15 Table Joins With A For-Each Loop
 
@@ -363,4 +374,3 @@ FETCH FIRST 3 ROWS WITH TIES;
 
 
 출처 : [SqlForDevs.com](https://sqlfordevs.com/ebook)
-
